@@ -3,15 +3,10 @@ import { existsSync } from 'fs'
 import path from 'path'
 import { fetchBuildings } from './osmDataProcessor.js'
 import { generateCityImage } from './canvas.js'
-
-// TODO: add inquirer for interactive city selection
-const CITY_IDS = {
-    tbilisi: 1996871,
-    rustavi: 5997314
-}
+import { selectCity } from './citySelect.js'
 
 const DATA_FILE = path.join('../data', 'buildings.json')
-const SELECTED_CITY = 'rustavi'
+const { city, id } = selectCity()
 
 const main = async () => {
     try {
@@ -24,7 +19,7 @@ const main = async () => {
             console.log(`> Loaded ${buildings.length} buildings from cache`)
         } else {
             console.log('=== No cached data found, fetching from OSM ===')
-            buildings = await fetchBuildings(CITY_IDS[SELECTED_CITY])
+            buildings = await fetchBuildings(id)
             
             if (!buildings || buildings.length === 0) {
                 console.error('=== Failed to fetch buildings, aborting ===')
@@ -32,8 +27,10 @@ const main = async () => {
             }
         }
 
-        await generateCityImage(buildings)
+        const fileName = city.charAt(0).toUpperCase() + city.slice(1)
+        await generateCityImage(buildings, fileName)
         console.log('=== Process completed successfully ===')
+        fs.rm(DATA_FILE)
 
     } catch (error) {
         console.error('=== Fatal error ===')

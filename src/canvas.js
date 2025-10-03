@@ -5,7 +5,6 @@ import path from 'path'
 const CANVAS_WIDTH = 15360
 const CANVAS_HEIGHT = 8640
 const OUTPUT_DIR = '../output'
-const OUTPUT_FILE = path.join(OUTPUT_DIR, 'Map.png')
 
 /**
  * Calculates bounding box from building geometries
@@ -56,10 +55,11 @@ const drawBuilding = (ctx, nodes, minLon, maxLat, scale) => {
 
 /**
  * Generates a city map image from building data
- * @param {Array} buildings - Array of buildings from fetchAndProcessBuildings
+ * @param {Array} buildings - Array of buildings from fetchBuildings
+ * @param {Array} fileName - String value of output png file
  * @returns {Promise<void>}
  */
-const generateCityImage = async (buildings) => {
+const generateCityImage = async (buildings, fileName) => {
     if (!buildings || buildings.length === 0) {
         console.warn('=== No buildings to render ===')
         return
@@ -85,9 +85,12 @@ const generateCityImage = async (buildings) => {
     })
 
     await fs.mkdir(OUTPUT_DIR, { recursive: true })
+
+    const OUTPUT_FILE = path.join(OUTPUT_DIR, `${fileName}.png`)
     await fs.writeFile(OUTPUT_FILE, canvas.toBuffer('image/png'))
     
     console.log(`=== Image saved to ${OUTPUT_FILE} ===`)
+    fs.open(OUTPUT_FILE)
 }
 
 export { generateCityImage }
