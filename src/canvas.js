@@ -1,56 +1,93 @@
 import { createCanvas } from 'canvas'
-import fs from 'fs'
+import fs from 'fs/promises'
+import path from 'path'
 
-const height = 8640
-const width = 15360
-const canvas = createCanvas(width, height)
-const ctx = canvas.getContext('2d')
+const CANVAS_WIDTH = 15360
+const CANVAS_HEIGHT = 8640
+const OUTPUT_DIR = '../output'
+const OUTPUT_FILE = path.join(OUTPUT_DIR, 'Map.png')
 
-ctx.fillStyle = 'white'
-ctx.fillRect(0, 0, width, height)
+/**
+ * Calculates bounding box from building geometries
+ * @param {Array} buildings - Array of building objects with nodes
+ * @returns {Object} Bounding box {minLon, maxLon, minLat, maxLat}
+ */
+const getBoundingBox = (buildings) => {
+    let minLon = Infinity, maxLon = -Infinity
+    let minLat = Infinity, maxLat = -Infinity
 
-const getCoordinateCorners = (arr, mathFunc, type) => {
-    let output = arr[0].center[type]
-    for (let i = 0; i < arr.length; i++) {
-        output = mathFunc(output, arr[i].center[type])
+    for (const building of buildings) {
+        for (const node of building.nodes) {
+            minLon = Math.min(minLon, node.lon)
+            maxLon = Math.max(maxLon, node.lon)
+            minLat = Math.min(minLat, node.lat)
+            maxLat = Math.max(maxLat, node.lat)
+        }
     }
 
-    return output
+    return { minLon, maxLon, minLat, maxLat }
 }
 
-const drawBuilding = (nodes, minLon, maxLat, scale) => {
+/**
+ * Draws a single building polygon on the canvas
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {Array} nodes - Building geometry nodes
+ * @param {number} minLon - Minimum longitude
+ * @param {number} maxLat - Maximum latitude
+ * @param {number} scale - Scale factor
+ */
+const drawBuilding = (ctx, nodes, minLon, maxLat, scale) => {
+    if (!nodes || nodes.length === 0) return
+
     ctx.beginPath()
-    ctx.moveTo((nodes[0].lon - minLon) * scale, (maxLat - nodes[0].lat) * scale)
+    
+    const firstNode = nodes[0]
+    ctx.moveTo((firstNode.lon - minLon) * scale, (maxLat - firstNode.lat) * scale)
 
-    nodes.forEach((node) => {
-        const { lon, lat } = node
-        const x = (lon - minLon) * scale
-        const y = (maxLat - lat) * scale
-
+    for (let i = 1; i < nodes.length; i++) {
+        const x = (nodes[i].lon - minLon) * scale
+        const y = (maxLat - nodes[i].lat) * scale
         ctx.lineTo(x, y)
-    })
-    ctx.closePath()
+    }
 
-    ctx.fillStyle = 'black'
+    ctx.closePath()
     ctx.fill()
 }
 
-const generateCityImage = (buildings, nodes) => {
-    const minLon = getCoordinateCorners(buildings, Math.min, 'lon')
-    const maxLat = getCoordinateCorners(buildings, Math.max, 'lat')
+/**
+ * Generates a city map image from building data
+ * @param {Array} buildings - Array of buildings from fetchAndProcessBuildings
+ * @returns {Promise<void>}
+ */
+const generateCityImage = async (buildings) => {
+    if (!buildings || buildings.length === 0) {
+        console.warn('=== No buildings to render ===')
+        return
+    }
 
-    const scaleX = width / (getCoordinateCorners(buildings, Math.max, 'lon') - minLon)
-    const scaleY = height / (maxLat - getCoordinateCorners(buildings, Math.min, 'lat'))
+    console.log(`=== Creating image from ${buildings.length} buildings ===`)
+
+    const { minLon, maxLon, minLat, maxLat } = getBoundingBox(buildings)
+
+    const scaleX = CANVAS_WIDTH / (maxLon - minLon)
+    const scaleY = CANVAS_HEIGHT / (maxLat - minLat)
     const scale = Math.min(scaleX, scaleY)
 
-    console.log(' === Creating image === ')
-    nodes.forEach((building) => drawBuilding(building.nodes, minLon, maxLat, scale))
+    const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT)
+    const ctx = canvas.getContext('2d')
 
-    if (!fs.existsSync('../output')) {
-        fs.mkdirSync('../output', { recursive: true })
-    }
-    fs.writeFileSync('../output/Buildings.png', canvas.toBuffer('image/png'))
-    console.log(' === File created === ')
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+    ctx.fillStyle = 'black'
+    buildings.forEach(building => {
+        drawBuilding(ctx, building.nodes, minLon, maxLat, scale)
+    })
+
+    await fs.mkdir(OUTPUT_DIR, { recursive: true })
+    await fs.writeFile(OUTPUT_FILE, canvas.toBuffer('image/png'))
+    
+    console.log(`=== Image saved to ${OUTPUT_FILE} ===`)
 }
 
 export { generateCityImage }
