@@ -46,6 +46,9 @@ const generateCityImage = (buildings, nodes) => {
     console.log(' === Creating image === ')
     nodes.forEach((building) => drawBuilding(building.nodes, minLon, maxLat, scale))
 
+    if (!fs.existsSync('../output')) {
+        fs.mkdirSync('../output', { recursive: true })
+    }
     fs.writeFileSync('../output/Buildings.png', canvas.toBuffer('image/png'))
     console.log(' === File created === ')
 }

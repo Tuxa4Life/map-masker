@@ -19,8 +19,12 @@ const fetchBuildings = async (cityId) => {
             headers: { 'Content-Type': 'text/plain' },
         })
 
-        // TODO: Filter relation types
-        const result = response.data.elements
+        const result = response.data.elements.filter(e => e.type !== 'relation')
+
+        if (!fs.existsSync('../data')) {
+            fs.mkdirSync('../data', { recursive: true })
+        }
+
         fs.writeFileSync('../data/buildings.json', JSON.stringify(result, null, 2))
         console.log('> Created file: buildings.json')
         console.log('=== Building Fetch complete ===')
@@ -42,7 +46,7 @@ const fetchNodesBatch = async (buildingIds, batchSize = 100) => {
 
     for (let i = 0; i < batches.length; i++) {
         const batch = batches[i]
-        console.log(`> Processing batch ${i + 1}/${batches.length} (${batch.length} buildings)`)
+        console.log(`> Processing batch ${i + 1}/${batches.length}`)
 
         const wayIds = batch.map((id) => `way(${id});`).join('\n            ')
         const query = `
@@ -174,6 +178,10 @@ const retryErrors = async (maxRetries = 3) => {
             }
         }
 
+        if (!fs.existsSync('../data')) {
+            fs.mkdirSync('../data', { recursive: true })
+        }
+
         fs.writeFileSync('../data/nodes.json', JSON.stringify(existingNodes, null, 2))
         fs.writeFileSync('../data/errors.json', JSON.stringify(remainingErrors, null, 2))
 
@@ -191,4 +199,14 @@ const retryErrors = async (maxRetries = 3) => {
     }
 }
 
-export { fetchBuildings, fetchNodes, retryErrors }
+const fullErrorClear = async () => {
+    let errors = JSON.parse(fs.readFileSync('../data/errors.json', 'utf-8'))
+    while (errors.length) {
+        await retryErrors(1)
+        errors = JSON.parse(fs.readFileSync('../data/errors.json', 'utf-8'))
+    }
+
+    fs.rmSync('../data/errors.json')
+}
+
+export { fetchBuildings, fetchNodes, retryErrors, fullErrorClear }
