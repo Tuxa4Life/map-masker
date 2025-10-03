@@ -115,6 +115,7 @@ Follow the prompt and see the magic
 
 * **Image file:** `output/Tbilisi.png`
   A high-resolution **black buildings on white canvas** map.
+  
 ![Rustavi Map](https://raw.githubusercontent.com/Tuxa4Life/map-masker/main/output/Template.png)
 
 ---
@@ -127,4 +128,5 @@ Follow the prompt and see the magic
 * Get city IDs from official OSM website.
 
 ---
+
 
