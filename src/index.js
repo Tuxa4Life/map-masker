@@ -1,5 +1,5 @@
-import { fetchBuildings, fetchNodes, retryErrors } from './osmDataProcessor'
-import { generateCityImage } from './canvas'
+import { fetchBuildings, fetchNodes, retryErrors } from './osmDataProcessor.js'
+import { generateCityImage } from './canvas.js'
 
 const city_ids = {
     rustavi: 5997314,
