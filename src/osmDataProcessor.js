@@ -1,10 +1,6 @@
 import axios from 'axios'
 import fs from 'fs'
 
-const cities = {
-    rustaviId: 5997314,
-}
-
 const fetchBuildings = async (cityId) => {
     const areaId = 3600000000 + cityId
 
@@ -24,13 +20,13 @@ const fetchBuildings = async (cityId) => {
         })
 
         const result = response.data.elements
-        fs.writeFileSync('./data/buildings.json', JSON.stringify(result, null, 2))
+        fs.writeFileSync('../data/buildings.json', JSON.stringify(result, null, 2))
         console.log('> Created file: buildings.json')
         console.log('=== Building Fetch complete ===')
 
         return result
     } catch (err) {
-        console.log(`=== Error fetching buildings. Error code: ${err.status} ===`)
+        console.log(`=== Error fetching buildings. Error code: ${err.status}. Please try again ===`)
         return []
     }
 }
@@ -125,8 +121,8 @@ const fetchNodes = async (buildings) => {
 
         const { output, erroredIds } = processNodes(buildings, nodeData)
 
-        fs.writeFileSync('./data/nodes.json', JSON.stringify(output, null, 2))
-        fs.writeFileSync('./data/errors.json', JSON.stringify(erroredIds, null, 2))
+        fs.writeFileSync('../data/nodes.json', JSON.stringify(output, null, 2))
+        fs.writeFileSync('../data/errors.json', JSON.stringify(erroredIds, null, 2))
 
         console.log('> Created file: nodes.json')
         console.log(`> Processed ${output.length} buildings successfully`)
@@ -142,8 +138,8 @@ const retryErrors = async (maxRetries = 3) => {
     console.log('=== Retrying errored buildings ===')
 
     try {
-        const erroredIds = JSON.parse(fs.readFileSync('./data/errors.json', 'utf-8'))
-        const existingNodes = JSON.parse(fs.readFileSync('./data/nodes.json', 'utf-8'))
+        const erroredIds = JSON.parse(fs.readFileSync('../data/errors.json', 'utf-8'))
+        const existingNodes = JSON.parse(fs.readFileSync('../data/nodes.json', 'utf-8'))
 
         if (erroredIds.length === 0) {
             console.log('> No errors to retry!')
@@ -160,7 +156,7 @@ const retryErrors = async (maxRetries = 3) => {
             console.log(`\n> Retry attempt ${retryCount}/${maxRetries} for ${remainingErrors.length} buildings`)
 
             const buildingsToRetry = remainingErrors.map((id) => ({ id }))
-            const nodeData = await fetchNodesBatch(remainingErrors, 20) // Smaller batch for retries
+            const nodeData = await fetchNodesBatch(remainingErrors, 20)
 
             const { output, erroredIds: newErrors } = processNodes(buildingsToRetry, nodeData)
 
@@ -177,8 +173,8 @@ const retryErrors = async (maxRetries = 3) => {
             }
         }
 
-        fs.writeFileSync('./data/nodes.json', JSON.stringify(existingNodes, null, 2))
-        fs.writeFileSync('./data/errors.json', JSON.stringify(remainingErrors, null, 2))
+        fs.writeFileSync('../data/nodes.json', JSON.stringify(existingNodes, null, 2))
+        fs.writeFileSync('../data/errors.json', JSON.stringify(remainingErrors, null, 2))
 
         console.log('\n=== Retry complete ===')
         console.log(`> Total buildings in nodes.json: ${existingNodes.length}`)
@@ -186,7 +182,7 @@ const retryErrors = async (maxRetries = 3) => {
 
         if (remainingErrors.length > 0) {
             console.log('> Some buildings still failed after all retries')
-            console.log('> They might be invalid IDs or deleted from OSM')
+            console.log('> They might be invalid IDs or relation types.')
         }
     } catch (err) {
         console.log('=== Error during retry process ===')
@@ -194,4 +190,4 @@ const retryErrors = async (maxRetries = 3) => {
     }
 }
 
-export { cities, fetchBuildings, fetchNodes, retryErrors }
+export { fetchBuildings, fetchNodes, retryErrors }
