@@ -19,6 +19,7 @@ const fetchBuildings = async (cityId) => {
             headers: { 'Content-Type': 'text/plain' },
         })
 
+        // TODO: Filter relation types
         const result = response.data.elements
         fs.writeFileSync('../data/buildings.json', JSON.stringify(result, null, 2))
         console.log('> Created file: buildings.json')

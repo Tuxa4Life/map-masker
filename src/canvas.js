@@ -43,10 +43,10 @@ const generateCityImage = (buildings, nodes) => {
     const scaleY = height / (maxLat - getCoordinateCorners(buildings, Math.min, 'lat'))
     const scale = Math.min(scaleX, scaleY)
 
-    console.log(' === Creating file === ')
+    console.log(' === Creating image === ')
     nodes.forEach((building) => drawBuilding(building.nodes, minLon, maxLat, scale))
 
-    fs.writeFileSync('./outputs/Buildings.png', canvas.toBuffer('image/png'))
+    fs.writeFileSync('../output/Buildings.png', canvas.toBuffer('image/png'))
     console.log(' === File created === ')
 }
 
