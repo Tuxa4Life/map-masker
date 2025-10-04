@@ -6,9 +6,10 @@ import { generateCityImage } from './canvas.js'
 import { selectCity } from './citySelect.js'
 
 const DATA_FILE = path.join('../data', 'buildings.json')
-const { city, id } = selectCity()
 
 const main = async () => {
+    const { city, id } = await selectCity()
+
     try {
         let buildings
 
